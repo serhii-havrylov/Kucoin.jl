@@ -11,3 +11,5 @@ SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
 [compat]
 julia = "1"
+HTTP = "0.9"
+JSON3 = "1.9"
