@@ -2,7 +2,7 @@ module Kucoin
 
 using HTTP: Response, URI, request, iserror
 using SHA: hmac_sha256
-using JSON3: read, write
+using JSON3: JSON3, read, write
 using Base64: base64encode
 import Base: string
 
@@ -29,7 +29,7 @@ Base.@kwdef struct KucoinApiData
 end
 
 """
-    KucoinRestApi.get_symbols_list([; market]) -> JSON3.Array
+    KucoinRestApi.get_symbols_list([; market]) -> JSON3.Array{JSON3.Object}
 
 See Kucoin official [docs](https://docs.kucoin.com/#get-symbols-list) for more details.
 
@@ -38,7 +38,7 @@ See Kucoin official [docs](https://docs.kucoin.com/#get-symbols-list) for more d
 - `market::String`: [Optional] a name of the trading market 
 
 # Returns
-- `JSON3.Array`: a list of symbols for all or a specified markets
+- `JSON3.Array{JSON3.Object}`: a list of symbols for all or a specified markets
 ```json
 [
   ...
@@ -64,12 +64,14 @@ See Kucoin official [docs](https://docs.kucoin.com/#get-symbols-list) for more d
 ]
 ```
 """
-function get_symbols_list(; market::Union{String,Nothing}=nothing)
+function get_symbols_list(;
+    market::Union{String,Nothing}=nothing
+)::JSON3.Array{JSON3.Object}
     return _handle(_kucoin_request(_HTTP_METHOD_GET, "/api/v1/symbols"; market=market))
 end
 
 """
-    KucoinRestApi.list_accounts(api_data[; currency[, type]]) -> JSON3.Array
+    KucoinRestApi.list_accounts(api_data[; currency[, type]]) -> JSON3.Array{JSON3.Object}
 
 See Kucoin official [docs](https://docs.kucoin.com/#list-accounts) for more details.
 
@@ -81,8 +83,8 @@ See Kucoin official [docs](https://docs.kucoin.com/#list-accounts) for more deta
 - `type::String`: [Optional] an account type, the valid values are: `"main"`, `"trade"`, 
 `"margin"` or `"pool"`
 
-#Returns
-- `JSON3.Array`
+# Returns
+- `JSON3.Array{JSON3.Object}`
 ```json
 [
   {
@@ -107,7 +109,7 @@ function list_accounts(
     api_data::KucoinApiData;
     currency::Union{String,Nothing}=nothing,
     type::Union{String,Nothing}=nothing,
-)
+)::JSON3.Array{JSON3.Object}
     return _handle(
         _kucoin_request(
             api_data, _HTTP_METHOD_GET, "/api/v1/accounts"; currency=currency, type=type
@@ -116,7 +118,7 @@ function list_accounts(
 end
 
 """
-    KucoinRestApi.place_limit_order(api_data[; kw...])
+    KucoinRestApi.place_limit_order(api_data[; kw...]) -> JSON3.Object
 
 Place a limit order. See Kucoin official [docs](https://docs.kucoin.com/#place-a-new-order) 
 for more details.
@@ -145,7 +147,13 @@ characters
 - `stp::String`: [Optional] self trade prevention, valid values: `"CN"`, `"CO"`, `"CB"` 
 or `"DC"`, read [Self-Trade Prevention](https://docs.kucoin.com/#self-trade-prevention)
 
- 
+# Returns
+- `JSON3.Object`
+```json
+{
+  "orderId": "5bd6e9286d99522a52e458de"
+}
+```
 """
 function place_limit_order(
     api_data::KucoinApiData;
@@ -162,7 +170,7 @@ function place_limit_order(
     symbol::String,
     remark::Union{String,Nothing}=nothing,
     stp::Union{String,Nothing}=nothing,
-)
+)::JSON3.Object
     return _handle(
         _kucoin_request(
             api_data,
@@ -187,7 +195,7 @@ function place_limit_order(
 end
 
 """
-    KucoinRestApi.place_market_order(api_data[; kw...])
+    KucoinRestApi.place_market_order(api_data[; kw...]) -> JSON3.Object
 
 Place a market order. See Kucoin official [docs](https://docs.kucoin.com/#place-a-new-order)
  for more details.
@@ -208,7 +216,14 @@ e.g. UUID
 characters
 - `stp::String`: [Optional] self trade prevention, valid values: `"CN"`, `"CO"`, `"CB"` 
 or `"DC"`, read [Self-Trade Prevention](https://docs.kucoin.com/#self-trade-prevention)
-    
+
+# Returns
+- `JSON3.Object`
+```json
+{
+  "orderId": "5bd6e9286d99522a52e458de"
+}
+```
 """
 function place_market_order(
     api_data::KucoinApiData;
@@ -219,7 +234,7 @@ function place_market_order(
     symbol::String,
     remark::Union{String,Nothing}=nothing,
     stp::Union{String,Nothing}=nothing,
-)
+)::JSON3.Object
     return _handle(
         _kucoin_request(
             api_data,
@@ -267,7 +282,7 @@ function _create_api_uri(endpoint_path::String)
     return URI(; scheme="https", host="api.kucoin.com", path=endpoint_path)
 end
 
-function _handle(response::Response)
+function _handle(response::Response)::Union{JSON3.Array{JSON3.Object},JSON3.Object}
     iserror(response) && error(response.body)
     data = read(response.body)
     if haskey(data, "code")
