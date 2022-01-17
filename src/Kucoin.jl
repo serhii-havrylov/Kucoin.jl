@@ -13,6 +13,7 @@ export list_accounts
 export get_trade_fees
 export place_limit_order
 export place_market_order
+export cancel_all_orders
 
 """
     Kucoin.ApiData(key, secret, passphrase)
@@ -223,6 +224,8 @@ e.g. UUID
 characters
 - `stp::String`: [Optional] self trade prevention, valid values: `"CN"`, `"CO"`, `"CB"` 
 or `"DC"`, read [Self-Trade Prevention](https://docs.kucoin.com/#self-trade-prevention)
+- `trade_type::String`: [Optional] the type of trading `TRADE` (Spot Trade), `MARGIN_TRADE` 
+(Margin Trade). Default is `TRADE`
 
 # Returns
 - `JSON3.Object`
@@ -247,6 +250,7 @@ function place_limit_order(
     symbol::String,
     remark::Union{String,Nothing}=nothing,
     stp::Union{String,Nothing}=nothing,
+    trade_type::Union{String,Nothing}=nothing,
 )::JSON3.Object
     return _handle(
         _kucoin_request(
@@ -267,6 +271,7 @@ function place_limit_order(
             type="limit",
             remark=remark,
             stp=stp,
+            tradeType=trade_type,
         ),
     )
 end
@@ -327,6 +332,47 @@ function place_market_order(
             stp=stp,
         ),
     )
+end
+
+"""
+    Kucoin.cancel_all_orders(api_data[; symbol[, trade_type]]]) -> Union{JSON3.Array{String},JSON3.Array{Union{}}}
+
+Cancel all open orders. See Kucoin official 
+[docs](https://docs.kucoin.com/#cancel-all-orders) for more details.
+
+# Arguments
+- `api_data::UserApiData`: holds user API data susch as api key, secret, passphrase, etc.
+
+# Keywords
+- `symbol::String`: [Optional] a valid symbol code for the trading pair
+- `trade_type::String`: [Optional] the type of trading, cancel the orders for the specified 
+trading type, and the default is to cancel the spot trading order (`TRADE`)
+
+# Returns
+- `Union{JSON3.Array{String},JSON3.Array{Union{}}}`: a list of ids of the canceled orders
+```json
+[
+  "5c52e11203aa677f33e493fb",  //orderId
+  "5c52e12103aa677f33e493fe",
+  "5c52e12a03aa677f33e49401",
+  "5c626b0803aa676fee8412a2"
+]
+```
+"""
+function cancel_all_orders(
+    api_data::UserApiData;
+    symbol::Union{String,Nothing}=nothing,
+    trade_type::Union{String,Nothing}=nothing,
+)::Union{JSON3.Array{String},JSON3.Array{Union{}}}
+    return _handle(
+        _kucoin_request(
+            api_data,
+            _HTTP_METHOD_DELETE,
+            "/api/v1/orders";
+            symbol=symbol,
+            tradeType=trade_type,
+        ),
+    )["cancelledOrderIds"]
 end
 
 function _sign(signature::String, data::String)
