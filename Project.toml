@@ -1,7 +1,7 @@
 name = "Kucoin"
 uuid = "0cdc39bb-36b4-4ec4-ad63-255670c92e6e"
 authors = ["scheknitrch <sergii.gavrylov@gmail.com>"]
-version = "0.1.1"
+version = "0.1.2"
 
 [deps]
 Base64 = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
