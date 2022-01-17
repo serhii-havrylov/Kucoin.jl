@@ -6,14 +6,18 @@ using JSON3: JSON3, read, write
 using Base64: base64encode
 import Base: string
 
-export KucoinApiData
+export UserApiData
 export get_symbols_list
+export get_all_tickers
 export list_accounts
+export get_trade_fees
 export place_limit_order
 export place_market_order
 
 """
-    KucoinApiData
+    Kucoin.ApiData(key, secret, passphrase)
+
+Holds user API data susch as API key, secret, passphrase, etc.
 
 # Fields
 - `key::String`: kucoin api key
@@ -21,7 +25,7 @@ export place_market_order
 - `passphrase::String`: kucoin api passphrase
 - `encrypted_passphrase::String`: encrypted passpharase
 """
-Base.@kwdef struct KucoinApiData
+Base.@kwdef struct UserApiData
     key::String
     secret::String
     passphrase::String
@@ -29,10 +33,10 @@ Base.@kwdef struct KucoinApiData
 end
 
 """
-    KucoinRestApi.get_symbols_list([; market]) -> JSON3.Array{JSON3.Object}
+    Kucoin.get_symbols_list([; market]) -> JSON3.Array{JSON3.Object}
 
-See Kucoin official [docs](https://docs.kucoin.com/#get-symbols-list) for more details.
-
+Get a list of available currency pairs for trading. See Kucoin official 
+[docs](https://docs.kucoin.com/#get-symbols-list) for more details.
 
 # Keywords
 - `market::String`: [Optional] a name of the trading market 
@@ -71,12 +75,48 @@ function get_symbols_list(;
 end
 
 """
-    KucoinRestApi.list_accounts(api_data[; currency[, type]]) -> JSON3.Array{JSON3.Object}
+    Kucoin.get_all_tickers() -> JSON3.Array{JSON3.Object}
 
-See Kucoin official [docs](https://docs.kucoin.com/#list-accounts) for more details.
+Get the market information for all the trading pairs in the market. See Kucoin official 
+[docs](https://docs.kucoin.com/#get-all-tickers) for more details.
+
+# Returns
+- `JSON3.Array{JSON3.Object}`
+```json
+[
+  {
+    "symbol": "BTC-USDT",  // symbol
+    "symbolName":"BTC-USDT",  // Name of trading pairs, it would change after renaming
+    "buy": "11328.9",  // bestAsk
+    "sell": "11329",  // bestBid
+    "changeRate": "-0.0055",  // 24h change rate
+    "changePrice": "-63.6",  // 24h change price
+    "high": "11610",  // 24h highest price
+    "low": "11200",  // 24h lowest price
+    "vol": "2282.70993217", // 24h volume，the aggregated trading volume in BTC
+    "volValue": "25984946.157790431",  // 24h total, the trading volume in quote currency of last 24 hours
+    "last": "11328.9",  // last price
+    "averagePrice": "11360.66065903",  // 24h average transaction price yesterday
+    "takerFeeRate": "0.001",  // Basic Taker Fee
+    "makerFeeRate": "0.001",  // Basic Maker Fee
+    "takerCoefficient": "1",  // Taker Fee Coefficient
+    "makerCoefficient": "1"  // Maker Fee Coefficient
+  }
+]
+```
+"""
+function get_all_tickers()::JSON3.Array{JSON3.Object}
+    return _handle(_kucoin_request(_HTTP_METHOD_GET, "/api/v1/market/allTickers"))["ticker"]
+end
+
+"""
+    Kucoin.list_accounts(api_data[; currency[, type]]) -> JSON3.Array{JSON3.Object}
+
+Get a list of accounts. See Kucoin official [docs](https://docs.kucoin.com/#list-accounts) 
+for more details.
 
 # Arguments
-- `api_data::KucoinApiData`: holds api data susch as api key, secret, passphrase, etc.
+- `api_data::UserApiData`: holds user API data susch as api key, secret, passphrase, etc.
 
 # Keywords
 - `currency::String`: [Optional] a unique currency kucoin code 
@@ -90,10 +130,10 @@ See Kucoin official [docs](https://docs.kucoin.com/#list-accounts) for more deta
   {
     "id": "5bd6e9286d99522a52e458de",  //accountId
     "currency": "BTC",  //Currency
-    "type": "main",     //Account type, including main and trade
+    "type": "main",  //Account type, including main and trade
     "balance": "237582.04299",  //Total assets of a currency
     "available": "237582.032",  //Available assets of a currency
-    "holds": "0.01099" //Hold assets of a currency
+    "holds": "0.01099"  //Hold assets of a currency
   },
   {
     "id": "5bd6e9216d99522a52e458d6",
@@ -106,7 +146,7 @@ See Kucoin official [docs](https://docs.kucoin.com/#list-accounts) for more deta
 ```
 """
 function list_accounts(
-    api_data::KucoinApiData;
+    api_data::UserApiData;
     currency::Union{String,Nothing}=nothing,
     type::Union{String,Nothing}=nothing,
 )::JSON3.Array{JSON3.Object}
@@ -118,13 +158,50 @@ function list_accounts(
 end
 
 """
-    KucoinRestApi.place_limit_order(api_data[; kw...]) -> JSON3.Object
+    Kucoin.get_trade_fees(api_data; symbols) -> JSON3.Array{JSON3.Object}
+
+Get the actual fee rate of the trading pair. See Kucoin official 
+[docs](https://docs.kucoin.com/#actual-fee-rate-of-the-trading-pair) for more details.
+
+# Arguments
+- `api_data::UserApiData`: holds user API data susch as api key, secret, passphrase, etc.
+- `symbols::AbstractVector{String}`: Trading pairs (optional, you can inquire fee rates of 
+10 trading pairs each time at most)
+
+# Returns
+- `JSON3.Array{JSON3.Object}`
+```json
+[
+  {
+    "symbol": "BTC-USDT",
+    "takerFeeRate": "0.001",
+    "makerFeeRate": "0.001"
+  },
+  {
+    "symbol": "KCS-USDT",
+    "takerFeeRate": "0.002",
+    "makerFeeRate": "0.0005"
+}
+```
+"""
+function get_trade_fees(
+    api_data::UserApiData; symbols::AbstractVector{String}
+)::JSON3.Array{JSON3.Object}
+    return _handle(
+        _kucoin_request(
+            api_data, _HTTP_METHOD_GET, "/api/v1/trade-fees"; symbols=join(symbols, ",")
+        ),
+    )
+end
+
+"""
+    Kucoin.place_limit_order(api_data[; <keyword arguments>]) -> JSON3.Object
 
 Place a limit order. See Kucoin official [docs](https://docs.kucoin.com/#place-a-new-order) 
 for more details.
 
 # Arguments
-- `api_data::KucoinApiData`: holds api data susch as api key, secret, passphrase, etc.
+- `api_data::UserApiData`: holds user API data susch as api key, secret, passphrase, etc.
 
 # Keywords
 - `price::String`: price per base currency in quote cuurency
@@ -156,7 +233,7 @@ or `"DC"`, read [Self-Trade Prevention](https://docs.kucoin.com/#self-trade-prev
 ```
 """
 function place_limit_order(
-    api_data::KucoinApiData;
+    api_data::UserApiData;
     price::String,
     size::String,
     time_in_force::Union{String,Nothing}=nothing,
@@ -195,13 +272,13 @@ function place_limit_order(
 end
 
 """
-    KucoinRestApi.place_market_order(api_data[; kw...]) -> JSON3.Object
+    Kucoin.place_market_order(api_data[; <keyword arguments>]]) -> JSON3.Object
 
 Place a market order. See Kucoin official [docs](https://docs.kucoin.com/#place-a-new-order)
  for more details.
 
 # Arguments
-- `api_data::KucoinApiData`: holds api data susch as api key, secret, passphrase, etc.
+- `api_data::UserApiData`: holds user API data susch as api key, secret, passphrase, etc.
 
 # Keywords
 - `size::String`: [Optional] desired amount in base currency. It is required that you use 
@@ -226,7 +303,7 @@ or `"DC"`, read [Self-Trade Prevention](https://docs.kucoin.com/#self-trade-prev
 ```
 """
 function place_market_order(
-    api_data::KucoinApiData;
+    api_data::UserApiData;
     size::Union{String,Nothing}=nothing,
     funds::Union{String,Nothing}=nothing,
     client_order_id::String,
@@ -257,10 +334,7 @@ function _sign(signature::String, data::String)
 end
 
 function _generate_headers(
-    api_data::KucoinApiData,
-    http_method::String,
-    endpoint_path::String,
-    request_data::String,
+    api_data::UserApiData, http_method::String, endpoint_path::String, request_data::String
 )
     ts_str = string(round(Int64, time() * 1000))
     str_to_sign = "$ts_str$http_method$endpoint_path$request_data"
@@ -310,7 +384,7 @@ function _kucoin_request(
 end
 
 function _kucoin_request(
-    api_data::KucoinApiData,
+    api_data::UserApiData,
     http_method_type::Union{Type{_HTTP_METHOD_GET},Type{_HTTP_METHOD_DELETE}},
     endpoint_path::String;
     kw...,
@@ -326,7 +400,7 @@ function _kucoin_request(
 end
 
 function _kucoin_request(
-    api_data::KucoinApiData,
+    api_data::UserApiData,
     http_method_type::Type{_HTTP_METHOD_POST},
     endpoint_path::String;
     kw...,
