@@ -15,8 +15,6 @@ export place_limit_order
 export place_market_order
 export cancel_all_orders
 
-include("utils.jl")
-
 """
     Kucoin.ApiData(key, secret, passphrase)
 
@@ -38,5 +36,6 @@ end
 include("market.jl")
 include("user.jl")
 include("trade.jl")
+include("utils.jl")
 
 end
