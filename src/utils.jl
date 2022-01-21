@@ -3,7 +3,7 @@ function _sign(signature::String, data::String)
 end
 
 function _generate_headers(
-    api_data::UserApiData, http_method::String, endpoint_path::String, request_data::String
+    api_data::ApiData, http_method::String, endpoint_path::String, request_data::String
 )
     ts_str = string(round(Int64, time() * 1000))
     str_to_sign = "$ts_str$http_method$endpoint_path$request_data"
@@ -35,25 +35,24 @@ function _handle(response::Response)::Union{JSON3.Array{JSON3.Object},JSON3.Obje
     return data
 end
 
-abstract type _HTTP_METHOD_GET end
-abstract type _HTTP_METHOD_DELETE end
-abstract type _HTTP_METHOD_POST end
+abstract type _HTTP_METHOD end
+abstract type _HTTP_METHOD_GET <: _HTTP_METHOD end
+abstract type _HTTP_METHOD_DELETE <: _HTTP_METHOD end
+abstract type _HTTP_METHOD_POST <: _HTTP_METHOD end
 string(::Type{_HTTP_METHOD_GET}) = "GET"
 string(::Type{_HTTP_METHOD_DELETE}) = "DELETE"
 string(::Type{_HTTP_METHOD_POST}) = "POST"
 
 function _kucoin_request(
-    http_method_type::Union{Type{_HTTP_METHOD_GET},Type{_HTTP_METHOD_DELETE}},
-    endpoint_path::String;
-    kw...,
-)
+    http_method_type::Type{T}, endpoint_path::String; kw...
+) where {T<:_HTTP_METHOD}
     query_str = join("$argument=$value" for (argument, value) ∈ kw if value ≢ nothing)
     uri = _create_api_uri(endpoint_path, query_str)
     return request(string(http_method_type), uri; query=query_str)
 end
 
 function _kucoin_request(
-    api_data::UserApiData,
+    api_data::ApiData,
     http_method_type::Union{Type{_HTTP_METHOD_GET},Type{_HTTP_METHOD_DELETE}},
     endpoint_path::String;
     kw...,
@@ -69,7 +68,7 @@ function _kucoin_request(
 end
 
 function _kucoin_request(
-    api_data::UserApiData,
+    api_data::ApiData,
     http_method_type::Type{_HTTP_METHOD_POST},
     endpoint_path::String;
     kw...,
