@@ -27,9 +27,9 @@ end
 
 function _handle(response::Response)::Union{JSON3.Array{JSON3.Object},JSON3.Object}
     iserror(response) && error(response.body)
-    data = read(response.body)
+    data = JSON3.read(response.body)
     if haskey(data, "code")
-        data["code"] == "200000" || error(write(data))
+        data["code"] == "200000" || error(JSON3.write(data))
         return data["data"]
     end
     return data
@@ -74,7 +74,7 @@ function _kucoin_request(
     kw...,
 )
     uri = _create_api_uri(endpoint_path)
-    json_str = write(kw)
+    json_str = JSON3.write(kw)
     http_method = string(http_method_type)
     headers = _generate_headers(api_data, http_method, endpoint_path, json_str)
     return request(http_method, uri; body=json_str, headers=headers)

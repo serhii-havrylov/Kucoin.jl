@@ -35,7 +35,7 @@ for more details.
 ```
 """
 function list_accounts(
-    api_data::UserApiData;
+    api_data::ApiData;
     currency::Union{String,Nothing}=nothing,
     type::Union{String,Nothing}=nothing,
 )::JSON3.Array{JSON3.Object}
@@ -74,7 +74,7 @@ Get the actual fee rate of the trading pair. See Kucoin official
 ```
 """
 function get_trade_fees(
-    api_data::UserApiData; symbols::AbstractVector{String}
+    api_data::ApiData; symbols::AbstractVector{String}
 )::JSON3.Array{JSON3.Object}
     return _handle(
         _kucoin_request(

@@ -11,7 +11,7 @@ for more details.
 - `price::String`: price per base currency in quote cuurency
 - `size::String`: amount of base currency to buy or sell
 - `time_in_force::String`: [Optional] `"GTC"`, `"GTT"`, `"IOC"`, or `"FOK"` (default is 
-`"GTC"`), read [Time In Force](https://docs.kucoin.com/#time-in-force)
+`"GTC"`), х [Time In Force](https://docs.kucoin.com/#time-in-force)
 - `cancel_after::Int64`: [Optional] cancel after `n` seconds, requires `time_in_force` to 
 be `"GTT"`
 - `post_only::Bool`: [Optional] post only flag, invalid when `time_in_force` is 
@@ -39,7 +39,7 @@ or `"DC"`, read [Self-Trade Prevention](https://docs.kucoin.com/#self-trade-prev
 ```
 """
 function place_limit_order(
-    api_data::UserApiData;
+    api_data::ApiData;
     price::String,
     size::String,
     time_in_force::Union{String,Nothing}=nothing,
@@ -111,7 +111,7 @@ or `"DC"`, read [Self-Trade Prevention](https://docs.kucoin.com/#self-trade-prev
 ```
 """
 function place_market_order(
-    api_data::UserApiData;
+    api_data::ApiData;
     size::Union{String,Nothing}=nothing,
     funds::Union{String,Nothing}=nothing,
     client_order_id::String,
@@ -163,7 +163,7 @@ trading type, and the default is to cancel the spot trading order (`TRADE`)
 ```
 """
 function cancel_all_orders(
-    api_data::UserApiData;
+    api_data::ApiData;
     symbol::Union{String,Nothing}=nothing,
     trade_type::Union{String,Nothing}=nothing,
 )::Union{JSON3.Array{String},JSON3.Array{Union{}}}
