@@ -1,6 +1,6 @@
 name = "Kucoin"
 uuid = "0cdc39bb-36b4-4ec4-ad63-255670c92e6e"
-authors = ["scheknitrch <sergii.gavrylov@gmail.com>"]
+authors = ["serhii-havrylov <sergii.gavrylov@gmail.com>"]
 version = "0.1.4"
 
 [deps]
