@@ -11,7 +11,7 @@ for more details.
 - `price::String`: price per base currency in quote cuurency
 - `size::String`: amount of base currency to buy or sell
 - `time_in_force::String`: [Optional] `"GTC"`, `"GTT"`, `"IOC"`, or `"FOK"` (default is 
-`"GTC"`), х [Time In Force](https://docs.kucoin.com/#time-in-force)
+`"GTC"`), read [Time In Force](https://docs.kucoin.com/#time-in-force)
 - `cancel_after::Int64`: [Optional] cancel after `n` seconds, requires `time_in_force` to 
 be `"GTT"`
 - `post_only::Bool`: [Optional] post only flag, invalid when `time_in_force` is 

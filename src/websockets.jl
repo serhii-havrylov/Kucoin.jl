@@ -60,8 +60,7 @@ function WebSocketClient(ws_token::JSON3.Object, connection_id::String, is_priva
     ws_client = WebSocketClient(
         ws_endpoint, ping_interval, is_private, Channel(), Ref{WebSocket}(), ReentrantLock()
     )
-    ref_assigned_event = _start_read_loop(ws_client)
-    wait(ref_assigned_event)
+    _start_read_loop(ws_client)
     return ws_client
 end
 
@@ -99,7 +98,8 @@ function _start_read_loop(ws_client::WebSocketClient)
         end
     end
     errormonitor(task)
-    return ref_assigned_event
+    wait(ref_assigned_event)
+    return nothing
 end
 
 function _start_ping_loop(ws_client::WebSocketClient)
@@ -109,5 +109,6 @@ function _start_ping_loop(ws_client::WebSocketClient)
         end
         sleep(ws_client.ping_interval)
     end
-    return errormonitor(task)
+    errormonitor(task)
+    return nothing
 end
