@@ -68,20 +68,49 @@ take!(ws_client::WebSocketClient) = take!(ws_client.message_channel)
 fetch(ws_client::WebSocketClient) = fetch(ws_client.message_channel)
 isready(ws_client::WebSocketClient) = isready(ws_client.message_channel)
 
-function subscribe(ws_client::WebSocketClient, topic::String)
+"""
+Kucoin.subscribe(ws_client, topic[, id[, is_private_channel[, return_response]]]) -> nothing
+
+Send a subscription message to the server.  See Kucoin official
+[docs](https://docs.kucoin.com/#subscribe) for more details.
+
+# Arguments
+- `ws_client::WebSocketClient`: web socket client
+- `topic::String`: the topic you want to subscribe to
+- `id::String`: [Optional] is unique string to mark the request which is same as id property
+ of ack.
+- `is_private_channel::Bool`: [Optional] for some specific topics (e.g. `/market/level2`), 
+`is_private_channel` is available. If the `is_private_channel` is set to true, the user will
+ only receive messages related to himself on the topic.
+- `return_response::Bool`: [Optional] if is set as true, kucoin will return the 
+acknowledgment message after successful subscription.
+"""
+function subscribe(
+    ws_client::WebSocketClient,
+    topic::String,
+    id::String=string(uuid1()),
+    is_private_channel::Bool=ws_client.is_private,
+    return_response::Bool=true,
+)
     lock(ws_client.write_lock) do
         write(
             ws_client.ws[],
-            """{"id": "$(uuid1())", "type": "subscribe", "topic": "$topic", "privateChannel": $(ws_client.is_private), "response": true}""",
+            """{"id": "$id", "type": "subscribe", "topic": "$topic", "privateChannel": $is_private_channel, "response": $return_response}""",
         )
     end
 end
 
-function unsubscribe(ws_client::WebSocketClient, topic::String)
+function unsubscribe(
+    ws_client::WebSocketClient,
+    topic::String,
+    id::String=string(uuid1()),
+    is_private_channel::Bool=ws_client.is_private,
+    return_response::Bool=true,
+)
     lock(ws_client.write_lock) do
         write(
             ws_client.ws[],
-            """{"id": "$(uuid1())", "type": "unsubscribe", "topic": "$topic", "privateChannel": $(ws_client.is_private), "response": true}""",
+            """{"id": "$id", "type": "unsubscribe", "topic": "$topic", "privateChannel": $is_private_channel, "response": $return_response}""",
         )
     end
 end
