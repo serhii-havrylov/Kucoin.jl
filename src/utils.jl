@@ -12,10 +12,10 @@ end
 
 function _generate_headers(
     api_data::ApiData,
-    http_method_type::Type{T},
+    http_method_type::Type{<:_HTTP_METHOD},
     endpoint_path::String,
     request_data::String,
-) where {T<:_HTTP_METHOD}
+)
     ts_str = string(round(Int64, time() * 1000))
     str_to_sign = "$ts_str$http_method_type$endpoint_path$request_data"
     return (
@@ -47,8 +47,8 @@ function _handle(response::Response)::Union{JSON3.Array{JSON3.Object},JSON3.Obje
 end
 
 function _kucoin_request(
-    http_method_type::Type{T}, endpoint_path::String; kw...
-) where {T<:_HTTP_METHOD}
+    http_method_type::Type{<:_HTTP_METHOD}, endpoint_path::String; kw...
+)
     query_str = join("$argument=$value" for (argument, value) ∈ kw if value ≢ nothing)
     uri = _create_api_uri(endpoint_path, query_str)
     return request(http_method_type, uri; query=query_str)
