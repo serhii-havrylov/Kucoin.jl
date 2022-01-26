@@ -6,7 +6,7 @@ using SHA: hmac_sha256
 using JSON3: JSON3  # Array, Object, read, write
 using Base64: base64encode
 using UUIDs: uuid1
-import Base: string, take!, fetch, isready
+import Base: print, take!, fetch, isready
 
 # REST API
 export ApiData

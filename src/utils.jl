@@ -1,12 +1,23 @@
+abstract type _HTTP_METHOD end
+abstract type _HTTP_METHOD_GET <: _HTTP_METHOD end
+abstract type _HTTP_METHOD_DELETE <: _HTTP_METHOD end
+abstract type _HTTP_METHOD_POST <: _HTTP_METHOD end
+print(io::IO, ::Type{_HTTP_METHOD_GET}) = print(io, "GET")
+print(io::IO, ::Type{_HTTP_METHOD_DELETE}) = print(io, "DELETE")
+print(io::IO, ::Type{_HTTP_METHOD_POST}) = print(io, "POST")
+
 function _sign(signature::String, data::String)
     return base64encode(hmac_sha256(Vector{UInt8}(signature), data))
 end
 
 function _generate_headers(
-    api_data::ApiData, http_method::String, endpoint_path::String, request_data::String
-)
+    api_data::ApiData,
+    http_method_type::Type{T},
+    endpoint_path::String,
+    request_data::String,
+) where {T<:_HTTP_METHOD}
     ts_str = string(round(Int64, time() * 1000))
-    str_to_sign = "$ts_str$http_method$endpoint_path$request_data"
+    str_to_sign = "$ts_str$http_method_type$endpoint_path$request_data"
     return (
         "KC-API-SIGN" => _sign(api_data.secret, str_to_sign),
         "KC-API-TIMESTAMP" => ts_str,
@@ -35,20 +46,12 @@ function _handle(response::Response)::Union{JSON3.Array{JSON3.Object},JSON3.Obje
     return data
 end
 
-abstract type _HTTP_METHOD end
-abstract type _HTTP_METHOD_GET <: _HTTP_METHOD end
-abstract type _HTTP_METHOD_DELETE <: _HTTP_METHOD end
-abstract type _HTTP_METHOD_POST <: _HTTP_METHOD end
-string(::Type{_HTTP_METHOD_GET}) = "GET"
-string(::Type{_HTTP_METHOD_DELETE}) = "DELETE"
-string(::Type{_HTTP_METHOD_POST}) = "POST"
-
 function _kucoin_request(
     http_method_type::Type{T}, endpoint_path::String; kw...
 ) where {T<:_HTTP_METHOD}
     query_str = join("$argument=$value" for (argument, value) ∈ kw if value ≢ nothing)
     uri = _create_api_uri(endpoint_path, query_str)
-    return request(string(http_method_type), uri; query=query_str)
+    return request(http_method_type, uri; query=query_str)
 end
 
 function _kucoin_request(
@@ -61,10 +64,9 @@ function _kucoin_request(
         ("$argument=$value" for (argument, value) ∈ kw if value ≢ nothing), "&"
     )
     uri = _create_api_uri(endpoint_path, query_str)
-    http_method = string(http_method_type)
     request_data = isempty(query_str) ? "" : "?$query_str"
-    headers = _generate_headers(api_data, http_method, endpoint_path, request_data)
-    return request(http_method, uri; query=query_str, headers=headers)
+    headers = _generate_headers(api_data, http_method_type, endpoint_path, request_data)
+    return request(http_method_type, uri; query=query_str, headers=headers)
 end
 
 function _kucoin_request(
@@ -75,7 +77,6 @@ function _kucoin_request(
 )
     uri = _create_api_uri(endpoint_path)
     json_str = JSON3.write(kw)
-    http_method = string(http_method_type)
-    headers = _generate_headers(api_data, http_method, endpoint_path, json_str)
-    return request(http_method, uri; body=json_str, headers=headers)
+    headers = _generate_headers(api_data, http_method_type, endpoint_path, json_str)
+    return request(http_method_type, uri; body=json_str, headers=headers)
 end
